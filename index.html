@@ -2,22 +2,87 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OxproyectS - Comentarios Anónimos</title>
   <style>
     body {
-      background-color: #0f1a2b;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0e1a2b;
       color: white;
-      font-family: Arial, sans-serif;
-      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
     }
+
     h1 {
-      text-align: center;
+      color: #a0c4ff;
+      font-size: 2.5rem;
+    }
+
+    textarea {
+      width: 100%;
+      max-width: 600px;
+      height: 100px;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background-color: #1e2b44;
+      color: white;
+      font-size: 1rem;
+      resize: none;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #3a5a99;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    button:hover {
+      background-color: #517ec4;
+    }
+
+    .comment {
+      background-color: #1f2f4d;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 15px;
+      max-width: 600px;
+      width: 100%;
+      word-wrap: break-word;
     }
   </style>
 </head>
 <body>
-  <h1>Bienvenido a OxproyectS</h1>
-  <p>Aquí podrás dejar comentarios anónimos.</p>
+  <h1>OxproyectS</h1>
+  <p>Comenta de forma anónima</p>
+
+  <textarea id="commentInput" placeholder="Escribe tu comentario..."></textarea>
+  <br />
+  <button onclick="postComment()">Publicar</button>
+
+  <div id="commentList"></div>
+
+  <script>
+    const commentList = document.getElementById("commentList");
+
+    function postComment() {
+      const comment = document.getElementById("commentInput").value.trim();
+      if (comment !== "") {
+        const div = document.createElement("div");
+        div.className = "comment";
+        div.textContent = comment;
+        commentList.prepend(div);
+        document.getElementById("commentInput").value = "";
+      }
+    }
+  </script>
 </body>
 </html>
