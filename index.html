@@ -2,125 +2,117 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>OxproyectS - Comentarios Anónimos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Los Backyardigans están leyendo tu comentario</title>
   <style>
     body {
-      background-color: #0d1b2a;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #101f33;
       color: white;
-      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 20px;
-      max-width: 600px;
-      margin: auto;
     }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    header img {
+      width: 80px;
+      height: auto;
+      border-radius: 12px;
+    }
+
     h1 {
-      color: #00b4d8;
-      text-align: center;
+      font-size: 1.4rem;
+      margin: 0;
+      color: #ffffff;
     }
+
     textarea {
-      width: 100%;
-      height: 100px;
-      margin-bottom: 10px;
+      width: 300px;
+      height: 80px;
+      border-radius: 8px;
       padding: 10px;
-      font-size: 16px;
-      border-radius: 5px;
       border: none;
       resize: none;
     }
+
     button {
-      background-color: #0077b6;
-      color: white;
+      margin-top: 10px;
+      padding: 6px 12px;
       border: none;
-      padding: 10px 20px;
+      border-radius: 6px;
+      background-color: #1e3a5f;
+      color: white;
       cursor: pointer;
-      font-size: 16px;
-      border-radius: 5px;
-      width: 100%;
     }
+
+    #comments {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
     .comment {
-      background-color: #1b263b;
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 5px;
-      white-space: pre-wrap;
+      background-color: #1c2a40;
+      padding: 12px;
+      border-radius: 12px;
+      position: relative;
+    }
+
+    .delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background-color: transparent;
+      border: none;
+      color: #aaa;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .delete-btn:hover {
+      color: red;
     }
   </style>
 </head>
 <body>
 
-  <h1>OxproyectS - Comentarios Anónimos</h1>
+  <header>
+    <img src="https://m.media-amazon.com/images/S/pv-target-images/6b02fea9ac43358cad762d6d089a3684dc62bee64c72c5f99c5a690e99b5bb89._SX1080_FMjpg_.jpg" alt="Backyardigans" />
+    <h1>Los Backyardigans están leyendo tu comentario</h1>
+  </header>
 
-  <textarea id="commentInput" placeholder="Escribe tu comentario aquí..."></textarea>
-  <button onclick="postComment()">Publicar</button>
+  <textarea id="commentInput" placeholder="Escribe tu comentario..."></textarea>
+  <button onclick="addComment()">Enviar</button>
 
-  <h2>Comentarios recientes:</h2>
-  <div id="commentsContainer"></div>
-
-  <!-- Firebase SDK Compat para usar firebase global -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <div id="comments"></div>
 
   <script>
-    // Configuración Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyCl3B2fvyvV_cUJBONcQ4cvhR186ab044k",
-      authDomain: "oxproyects.firebaseapp.com",
-      projectId: "oxproyects",
-      storageBucket: "oxproyects.firebasestorage.app",
-      messagingSenderId: "211409030084",
-      appId: "1:211409030084:web:beab96a96c29a3bf6cb291"
-    };
-
-    // Inicializar Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    // Publicar comentario
-    function postComment() {
-      const comment = document.getElementById("commentInput").value.trim();
-      if (!comment) {
-        alert("Por favor, escribe un comentario.");
-        return;
+    function addComment() {
+      const input = document.getElementById("commentInput");
+      const text = input.value.trim();
+      if (text !== "") {
+        const commentDiv = document.createElement("div");
+        commentDiv.className = "comment";
+        commentDiv.innerHTML = `
+          <button class="delete-btn" onclick="this.parentElement.remove()">✖</button>
+          ${text}
+        `;
+        document.getElementById("comments").appendChild(commentDiv);
+        input.value = "";
       }
-      console.log("Intentando publicar comentario:", comment);
-
-      db.collection("comments").add({
-        texto: comment,
-        fecha: new Date()
-      })
-      .then(() => {
-        console.log("Comentario publicado!");
-        document.getElementById("commentInput").value = "";
-        loadComments();
-      })
-      .catch((error) => {
-        console.error("Error al publicar comentario:", error);
-        alert("Error al publicar comentario: " + error.message);
-      });
     }
-
-    // Cargar y mostrar comentarios
-    function loadComments() {
-      const container = document.getElementById("commentsContainer");
-      container.innerHTML = "";
-
-      db.collection("comments")
-        .orderBy("fecha", "desc")
-        .limit(20)
-        .get()
-        .then((querySnapshot) => {
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const div = document.createElement("div");
-            div.className = "comment";
-            div.textContent = data.texto;
-            container.appendChild(div);
-          });
-        });
-    }
-
-    // Cargar comentarios al inicio
-    loadComments();
   </script>
 
 </body>
