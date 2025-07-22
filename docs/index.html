@@ -10,7 +10,7 @@
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #111827; /* Color sólido oscuro */
+      background-color: #111827;
       color: white;
     }
     header {
@@ -23,6 +23,9 @@
     header h1 {
       margin: 0;
       font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     .search {
       display: flex;
@@ -42,7 +45,24 @@
       cursor: pointer;
     }
     .container {
-      padding: 20px;
+      padding: 14px;
+    }
+    .create-form {
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .create-form input,
+    .create-form button {
+      padding: 6px;
+      border-radius: 4px;
+      border: none;
+    }
+    .create-form button {
+      background-color: #16a34a;
+      color: white;
+      cursor: pointer;
     }
     .folder {
       background-color: #1e40af;
@@ -50,6 +70,18 @@
       margin-bottom: 10px;
       border-radius: 6px;
       cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .folder button {
+      background-color: #dc2626;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 2px 6px;
+      font-size: 14px;
     }
     .comment-box {
       margin-top: 10px;
@@ -72,11 +104,27 @@
       cursor: pointer;
       font-size: 12px;
     }
+    #refreshCommentsBtn {
+      margin-top: 10px;
+      padding: 6px 12px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .backyardigans-img {
+      height: 40px;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1> Los Backyardigans están viendo tu comentario</h1>
+    <h1>
+      <img src="https://m.media-amazon.com/images/S/pv-target-images/6b02fea9ac43358cad762d6d089a3684dc62bee64c72c5f99c5a690e99b5bb89._SX1080_FMjpg_.jpg" alt="Backyardigans" class="backyardigans-img">
+      Los Backyardigans están viendo tu comentario
+    </h1>
     <div class="search">
       <input type="text" id="searchInput" placeholder="Buscar carpeta">
       <button onclick="searchFolder()">Buscar</button>
@@ -84,9 +132,11 @@
   </header>
 
   <div class="container">
-    <input type="text" id="folderName" placeholder="Nombre de carpeta">
-    <input type="password" id="folderPassword" placeholder="Contraseña">
-    <button onclick="createFolder()">Crear carpeta</button>
+    <div class="create-form">
+      <input type="text" id="folderName" placeholder="Nombre de carpeta">
+      <input type="password" id="folderPassword" placeholder="Contraseña">
+      <button onclick="createFolder(event)">Crear carpeta</button>
+    </div>
 
     <div id="foldersContainer"></div>
 
@@ -95,7 +145,8 @@
       <div id="commentsContainer"></div>
       <div class="comment-box">
         <input type="text" id="commentInput" placeholder="Escribe tu comentario...">
-        <button onclick="addComment()">Comentar</button>
+        <button onclick="addComment(event)">Comentar</button>
+        <button id="refreshCommentsBtn">🔄 Actualizar comentarios</button>
       </div>
     </div>
   </div>
@@ -114,14 +165,25 @@
 
     let selectedFolder = null;
 
-    async function createFolder() {
+    async function createFolder(event) {
+      const btn = event.target;
+      btn.disabled = true;
       const name = document.getElementById("folderName").value.trim();
       const password = document.getElementById("folderPassword").value.trim();
-      if (!name || !password) return alert("Completa nombre y contraseña.");
+      if (!name || !password) {
+        alert("Completa nombre y contraseña.");
+        btn.disabled = false;
+        return;
+      }
       const exists = await db.collection("folders").doc(name).get();
-      if (exists.exists) return alert("La carpeta ya existe.");
+      if (exists.exists) {
+        alert("La carpeta ya existe.");
+        btn.disabled = false;
+        return;
+      }
       await db.collection("folders").doc(name).set({ password });
       loadFolders();
+      btn.disabled = false;
     }
 
     async function loadFolders(filter = "") {
@@ -130,9 +192,34 @@
       const snapshot = await db.collection("folders").get();
       snapshot.forEach(doc => {
         if (filter && !doc.id.toLowerCase().includes(filter.toLowerCase())) return;
+
         const div = document.createElement("div");
         div.className = "folder";
-        div.textContent = doc.id;
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = doc.id;
+        nameSpan.style.flex = "1";
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "🗑";
+        deleteBtn.onclick = async (e) => {
+          e.stopPropagation();
+          const confirmDelete = confirm(`¿Eliminar la carpeta "${doc.id}" y todos sus comentarios?`);
+          if (!confirmDelete) return;
+
+          const commentsSnapshot = await db.collection("folders").doc(doc.id).collection("comments").get();
+          const batch = db.batch();
+          commentsSnapshot.forEach(commentDoc => {
+            batch.delete(commentDoc.ref);
+          });
+          await batch.commit();
+
+          await db.collection("folders").doc(doc.id).delete();
+          loadFolders();
+        };
+
+        div.appendChild(nameSpan);
+        div.appendChild(deleteBtn);
         div.onclick = () => accessFolder(doc.id);
         container.appendChild(div);
       });
@@ -142,28 +229,46 @@
       const input = prompt(`Contraseña para entrar a "${name}"`);
       if (!input) return;
       const doc = await db.collection("folders").doc(name).get();
-      if (!doc.exists || doc.data().password !== input) return alert("Contraseña incorrecta.");
+      if (!doc.exists) {
+        alert("La carpeta no existe.");
+        return;
+      }
+      if (doc.data().password !== input) {
+        alert("Contraseña incorrecta.");
+        return;
+      }
       selectedFolder = name;
-      document.getElementById("selectedFolderTitle").textContent = "Carpeta:" + name;
+      document.getElementById("selectedFolderTitle").textContent = "Carpeta: " + name;
       document.getElementById("commentsSection").style.display = "block";
       loadComments();
     }
 
-    async function addComment() {
+    async function addComment(event) {
+      const btn = event.target;
+      btn.disabled = true;
       const text = document.getElementById("commentInput").value.trim();
-      if (!text || !selectedFolder) return;
+      if (!text || !selectedFolder) {
+        btn.disabled = false;
+        return;
+      }
       await db.collection("folders").doc(selectedFolder).collection("comments").add({
         text,
         createdAt: new Date()
       });
       document.getElementById("commentInput").value = "";
       loadComments();
+      btn.disabled = false;
     }
 
     async function loadComments() {
       const container = document.getElementById("commentsContainer");
       container.innerHTML = "";
-      const snapshot = await db.collection("folders").doc(selectedFolder).collection("comments").orderBy("createdAt").get();
+      const snapshot = await db
+        .collection("folders")
+        .doc(selectedFolder)
+        .collection("comments")
+        .orderBy("createdAt", "asc")
+        .get();
       snapshot.forEach(doc => {
         const div = document.createElement("div");
         div.className = "comment";
@@ -186,6 +291,8 @@
       const term = document.getElementById("searchInput").value.trim();
       loadFolders(term);
     }
+
+    document.getElementById("refreshCommentsBtn").addEventListener("click", loadComments);
 
     loadFolders();
   </script>
