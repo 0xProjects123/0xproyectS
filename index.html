@@ -2,118 +2,169 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Los Backyardigans están leyendo tu comentario</title>
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #101f33;
+      background-color: #0f172a;
       color: white;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
     }
 
     header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
+      gap: 10px;
+      background-color: #1e293b;
+      padding: 15px 20px;
+      width: 100%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
     }
 
     header img {
-      width: 80px;
-      height: auto;
-      border-radius: 12px;
+      height: 60px;
+      border-radius: 10px;
     }
 
-    h1 {
-      font-size: 1.4rem;
+    header h1 {
+      font-size: 18px;
       margin: 0;
-      color: #ffffff;
+    }
+
+    .comentario-box {
+      margin: 20px auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     textarea {
-      width: 300px;
+      width: 250px;
       height: 80px;
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 10px;
       border: none;
       resize: none;
+      background-color: #1e293b;
+      color: white;
+      font-size: 14px;
+      margin-bottom: 10px;
     }
 
     button {
-      margin-top: 10px;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 6px;
-      background-color: #1e3a5f;
+      background-color: #3b82f6;
       color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
       cursor: pointer;
+      font-size: 14px;
     }
 
-    #comments {
-      margin-top: 20px;
-      width: 100%;
+    .comentarios {
+      width: 90%;
       max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      margin-bottom: 30px;
     }
 
-    .comment {
-      background-color: #1c2a40;
-      padding: 12px;
+    .comentario {
+      background-color: #1e293b;
       border-radius: 12px;
+      padding: 12px 16px;
+      margin: 10px 0;
       position: relative;
+      font-size: 14px;
     }
 
-    .delete-btn {
+    .comentario button {
       position: absolute;
       top: 6px;
       right: 6px;
-      background-color: transparent;
-      border: none;
-      color: #aaa;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .delete-btn:hover {
-      color: red;
+      background-color: red;
+      padding: 2px 6px;
+      font-size: 10px;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-
   <header>
     <img src="https://m.media-amazon.com/images/S/pv-target-images/6b02fea9ac43358cad762d6d089a3684dc62bee64c72c5f99c5a690e99b5bb89._SX1080_FMjpg_.jpg" alt="Backyardigans" />
     <h1>Los Backyardigans están leyendo tu comentario</h1>
   </header>
 
-  <textarea id="commentInput" placeholder="Escribe tu comentario..."></textarea>
-  <button onclick="addComment()">Enviar</button>
+  <div class="comentario-box">
+    <textarea id="comentario" placeholder="Escribe tu comentario..."></textarea>
+    <button onclick="guardarComentario()">Enviar</button>
+  </div>
 
-  <div id="comments"></div>
+  <div class="comentarios" id="comentarios"></div>
 
-  <script>
-    function addComment() {
-      const input = document.getElementById("commentInput");
-      const text = input.value.trim();
-      if (text !== "") {
-        const commentDiv = document.createElement("div");
-        commentDiv.className = "comment";
-        commentDiv.innerHTML = `
-          <button class="delete-btn" onclick="this.parentElement.remove()">✖</button>
-          ${text}
-        `;
-        document.getElementById("comments").appendChild(commentDiv);
-        input.value = "";
-      }
+  <!-- Firebase -->
+  <script type="module">
+    // Firebase config
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-lite.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB4BiAjpsTUgntb0F7vcSEGwhJvhLFwxsQ",
+      authDomain: "xprojects-c8ecb.firebaseapp.com",
+      projectId: "xprojects-c8ecb",
+      storageBucket: "xprojects-c8ecb.appspot.com",
+      messagingSenderId: "28051514021",
+      appId: "1:28051514021:web:27af9723e8abebd38ca34c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const comentariosRef = collection(db, "comentarios");
+
+    async function guardarComentario() {
+      const input = document.getElementById("comentario");
+      const texto = input.value.trim();
+      if (!texto) return;
+
+      await addDoc(comentariosRef, {
+        texto,
+        fecha: new Date().toISOString()
+      });
+
+      input.value = "";
+      obtenerComentarios();
     }
-  </script>
 
+    async function eliminarComentario(id) {
+      await deleteDoc(doc(db, "comentarios", id));
+      obtenerComentarios();
+    }
+
+    async function obtenerComentarios() {
+      const contenedor = document.getElementById("comentarios");
+      contenedor.innerHTML = "";
+      const snapshot = await getDocs(comentariosRef);
+      const comentarios = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+      comentarios.forEach(com => {
+        const div = document.createElement("div");
+        div.className = "comentario";
+        div.innerHTML = `
+          <button onclick="eliminarComentario('${com.id}')">X</button>
+          ${com.texto}
+        `;
+        contenedor.appendChild(div);
+      });
+    }
+
+    // Cargar al iniciar
+    window.eliminarComentario = eliminarComentario;
+    obtenerComentarios();
+  </script>
 </body>
 </html>
