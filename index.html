@@ -2,87 +2,123 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OxproyectS - Comentarios Anónimos</title>
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #0e1a2b;
+      background-color: #0d1b2a;
       color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
     }
-
     h1 {
-      color: #a0c4ff;
-      font-size: 2.5rem;
+      color: #00b4d8;
+      text-align: center;
     }
-
     textarea {
       width: 100%;
-      max-width: 600px;
       height: 100px;
+      margin-bottom: 10px;
       padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
       border: none;
-      border-radius: 10px;
-      background-color: #1e2b44;
-      color: white;
-      font-size: 1rem;
       resize: none;
     }
-
     button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background-color: #3a5a99;
+      background-color: #0077b6;
       color: white;
       border: none;
-      border-radius: 8px;
+      padding: 10px 20px;
       cursor: pointer;
-      font-size: 1rem;
-    }
-
-    button:hover {
-      background-color: #517ec4;
-    }
-
-    .comment {
-      background-color: #1f2f4d;
-      border-radius: 10px;
-      padding: 15px;
-      margin-top: 15px;
-      max-width: 600px;
+      font-size: 16px;
+      border-radius: 5px;
       width: 100%;
-      word-wrap: break-word;
+    }
+    .comment {
+      background-color: #1b263b;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      white-space: pre-wrap;
     }
   </style>
 </head>
 <body>
-  <h1>OxproyectS</h1>
-  <p>Comenta de forma anónima</p>
 
-  <textarea id="commentInput" placeholder="Escribe tu comentario..."></textarea>
-  <br />
+  <h1>OxproyectS - Comentarios Anónimos</h1>
+
+  <textarea id="commentInput" placeholder="Escribe tu comentario aquí..."></textarea>
   <button onclick="postComment()">Publicar</button>
 
-  <div id="commentList"></div>
+  <h2>Comentarios recientes:</h2>
+  <div id="commentsContainer"></div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
 
   <script>
-    const commentList = document.getElementById("commentList");
+    // Configuración Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCl3B2fvyvV_cUJBONcQ4cvhR186ab044k",
+      authDomain: "oxproyects.firebaseapp.com",
+      projectId: "oxproyects",
+      storageBucket: "oxproyects.firebasestorage.app",
+      messagingSenderId: "211409030084",
+      appId: "1:211409030084:web:beab96a96c29a3bf6cb291"
+    };
 
+    // Inicializar Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Publicar comentario
     function postComment() {
       const comment = document.getElementById("commentInput").value.trim();
-      if (comment !== "") {
-        const div = document.createElement("div");
-        div.className = "comment";
-        div.textContent = comment;
-        commentList.prepend(div);
-        document.getElementById("commentInput").value = "";
+      if (!comment) {
+        alert("Por favor, escribe un comentario.");
+        return;
       }
+
+      db.collection("comments").add({
+        texto: comment,
+        fecha: new Date()
+      })
+      .then(() => {
+        document.getElementById("commentInput").value = "";
+        loadComments();
+      })
+      .catch((error) => {
+        alert("Error al publicar comentario: " + error.message);
+      });
     }
+
+    // Cargar y mostrar comentarios
+    function loadComments() {
+      const container = document.getElementById("commentsContainer");
+      container.innerHTML = "";
+
+      db.collection("comments")
+        .orderBy("fecha", "desc")
+        .limit(20)
+        .get()
+        .then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const div = document.createElement("div");
+            div.className = "comment";
+            div.textContent = data.texto;
+            container.appendChild(div);
+          });
+        });
+    }
+
+    // Cargar comentarios al inicio
+    loadComments();
   </script>
+
 </body>
 </html>
