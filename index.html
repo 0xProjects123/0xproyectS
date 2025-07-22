@@ -56,9 +56,9 @@
   <h2>Comentarios recientes:</h2>
   <div id="commentsContainer"></div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+  <!-- Firebase SDK Compat para usar firebase global -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <script>
     // Configuración Firebase
@@ -82,16 +82,19 @@
         alert("Por favor, escribe un comentario.");
         return;
       }
+      console.log("Intentando publicar comentario:", comment);
 
       db.collection("comments").add({
         texto: comment,
         fecha: new Date()
       })
       .then(() => {
+        console.log("Comentario publicado!");
         document.getElementById("commentInput").value = "";
         loadComments();
       })
       .catch((error) => {
+        console.error("Error al publicar comentario:", error);
         alert("Error al publicar comentario: " + error.message);
       });
     }
