@@ -4,143 +4,208 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Los Backyardigans están leyendo tu comentario</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #0d1b2a;
-      color: white;
       margin: 0;
+      background-color: #0f172a;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+    }
+    .header {
+      background-color: #1e293b;
       padding: 20px;
       text-align: center;
-    }
-
-    .header {
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
       display: flex;
-      justify-content: center;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
+      justify-content: center;
+      gap: 20px;
     }
-
     .header img {
-      width: 80px;
+      height: 60px;
       border-radius: 12px;
     }
-
-    h1 {
-      font-size: 20px;
+    .container {
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
     }
-
-    #comment-box {
-      width: 300px;
-      margin: 0 auto 10px;
-      padding: 8px;
-      border-radius: 8px;
-      border: none;
-      font-size: 14px;
+    .folder {
+      background-color: #1e3a8a;
+      border-radius: 15px;
+      padding: 10px 15px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-
-    #submit {
-      padding: 8px 16px;
-      background-color: #1b263b;
+    .comment-box {
+      background-color: #334155;
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+    button {
+      background-color: #2563eb;
       color: white;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .comment {
-      background-color: #1b263b;
-      margin: 10px auto;
-      padding: 10px;
+      padding: 8px 14px;
       border-radius: 10px;
-      width: 320px;
-      text-align: left;
-      position: relative;
+      cursor: pointer;
+      margin: 4px;
     }
-
-    .delete-btn {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background: red;
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 8px;
+      border-radius: 10px;
       border: none;
-      border-radius: 50%;
+      font-size: 16px;
+    }
+    #buscarBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #2563eb;
       color: white;
-      width: 20px;
-      height: 20px;
-      font-size: 12px;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 10px;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
+  <button id="buscarBtn">🔍 Buscar carpeta</button>
 
   <div class="header">
-    <img src="https://m.media-amazon.com/images/S/pv-target-images/6b02fea9ac43358cad762d6d089a3684dc62bee64c72c5f99c5a690e99b5bb89._SX1080_FMjpg_.jpg" alt="Backyardigans" />
-    <h1>Los Backyardigans están leyendo tu comentario</h1>
+    Los Backyardigans están leyendo tu comentario
+    <img src="https://m.media-amazon.com/images/S/pv-target-images/6b02fea9ac43358cad762d6d089a3684dc62bee64c72c5f99c5a690e99b5bb89._SX1080_FMjpg_.jpg" />
   </div>
 
-  <textarea id="comment-box" placeholder="Escribe un comentario..."></textarea><br>
-  <button id="submit">Comentar</button>
+  <div class="container">
+    <input id="folderName" placeholder="Nombre de carpeta" />
+    <input id="folderPassword" placeholder="Contraseña" type="password" />
+    <button onclick="crearCarpeta()">Crear carpeta</button>
 
-  <div id="comments"></div>
-
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <div id="folders"></div>
+    <div id="comments"></div>
+  </div>
 
   <script>
-    // Tu configuración de Firebase
     const firebaseConfig = {
-      apiKey: "AIzaSyCl3B2fvyvV_cUJBONcQ4cvhR186ab044k",
-      authDomain: "oxproyects.firebaseapp.com",
-      projectId: "oxproyects",
-      storageBucket: "oxproyects.firebasestorage.app",
-      messagingSenderId: "211409030084",
-      appId: "1:211409030084:web:beab96a96c29a3bf6cb291"
+      apiKey: "AIzaSyB4BiAjpsTUgntb0F7vcSEGwhJvhLFwxsQ",
+      authDomain: "xprojects-c8ecb.firebaseapp.com",
+      projectId: "xprojects-c8ecb",
+      storageBucket: "xprojects-c8ecb.appspot.com",
+      messagingSenderId: "28051514021",
+      appId: "1:28051514021:web:27af9723e8abebd38ca34c"
     };
-
-    // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const commentBox = document.getElementById('comment-box');
-    const submitBtn = document.getElementById('submit');
-    const commentsDiv = document.getElementById('comments');
+    async function crearCarpeta() {
+      const name = document.getElementById("folderName").value.trim();
+      const password = document.getElementById("folderPassword").value.trim();
+      if (!name || !password) return alert("Completa ambos campos.");
+      const doc = await db.collection("folders").add({ name, password });
+      loadCarpetas();
+    }
 
-    // Enviar comentario
-    submitBtn.addEventListener('click', async () => {
-      const text = commentBox.value.trim();
-      if (text !== "") {
-        await db.collection("comentarios").add({
-          mensaje: text,
-          fecha: new Date()
-        });
-        commentBox.value = "";
-      }
-    });
+    async function eliminarCarpeta(id) {
+      if (!confirm("¿Eliminar esta carpeta?")) return;
+      await db.collection("folders").doc(id).delete();
+      document.getElementById(`comments-${id}`)?.remove();
+      loadCarpetas();
+    }
 
-    // Mostrar comentarios en tiempo real
-    db.collection("comentarios").orderBy("fecha", "desc").onSnapshot(snapshot => {
-      commentsDiv.innerHTML = "";
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const comment = document.createElement("div");
-        comment.className = "comment";
-        comment.innerHTML = `
-          ${data.mensaje}
-          <button class="delete-btn" onclick="eliminarComentario('${doc.id}')">×</button>
+    function mostrarComentarios(id) {
+      const div = document.getElementById(`comments-${id}`);
+      div.style.display = div.style.display === "none" ? "block" : "none";
+    }
+
+    function enterFolder(id, name) {
+      const password = prompt(`Contraseña para entrar a "${name}":`);
+      db.collection("folders").doc(id).get().then(doc => {
+        if (!doc.exists || doc.data().password !== password) {
+          alert("Contraseña incorrecta.");
+          return;
+        }
+        const div = document.getElementById(`comments-${id}`);
+        div.style.display = "block";
+      });
+    }
+
+    function comentar(id) {
+      const input = document.getElementById(`input-${id}`);
+      const text = input.value.trim();
+      if (!text) return;
+      db.collection("folders").doc(id).collection("comments").add({
+        text,
+        timestamp: new Date()
+      });
+      input.value = "";
+      loadComentarios(id);
+    }
+
+    async function loadComentarios(id) {
+      const snap = await db.collection("folders").doc(id).collection("comments").orderBy("timestamp", "asc").get();
+      const div = document.getElementById(`comments-${id}`);
+      div.innerHTML = `
+        <textarea id="input-${id}" placeholder="Escribe tu comentario..."></textarea>
+        <button onclick="comentar('${id}')">Comentar</button><hr/>
+      `;
+      snap.forEach(doc => {
+        const c = doc.data();
+        div.innerHTML += `<div class="comment-box">${c.text}</div>`;
+      });
+    }
+
+    async function loadCarpetas() {
+      const snap = await db.collection("folders").get();
+      const foldersDiv = document.getElementById("folders");
+      foldersDiv.innerHTML = "";
+      snap.forEach(doc => {
+        const d = doc.data();
+        const div = document.createElement("div");
+        div.className = "folder";
+        div.innerHTML = `
+          <strong>${d.name}</strong>
+          <div>
+            <button onclick="enterFolder('${doc.id}', '${d.name}')">Ingresar a la carpeta</button>
+            <button onclick="eliminarCarpeta('${doc.id}')">Eliminar</button>
+          </div>
         `;
-        commentsDiv.appendChild(comment);
+        foldersDiv.appendChild(div);
+
+        const commentsDiv = document.createElement("div");
+        commentsDiv.id = `comments-${doc.id}`;
+        commentsDiv.style.display = "none";
+        foldersDiv.appendChild(commentsDiv);
+        loadComentarios(doc.id);
+      });
+    }
+
+    document.getElementById("buscarBtn").addEventListener("click", async () => {
+      const nombre = prompt("¿Cuál es el nombre de la carpeta que deseas buscar?");
+      if (!nombre) return;
+      const folders = await db.collection("folders").where("name", "==", nombre).get();
+      if (folders.empty) {
+        alert("No se encontró ninguna carpeta con ese nombre.");
+        return;
+      }
+      folders.forEach(doc => {
+        const folder = doc.data();
+        enterFolder(doc.id, folder.name);
+        window.scrollTo(0, document.getElementById(`comments-${doc.id}`).offsetTop);
       });
     });
 
-    // Eliminar comentario
-    function eliminarComentario(id) {
-      db.collection("comentarios").doc(id).delete();
-    }
+    loadCarpetas();
   </script>
-
 </body>
 </html>
