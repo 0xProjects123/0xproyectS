@@ -1,211 +1,196 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Los Backyardigans están leyendo tu comentario</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=3.0">
+  <title>0xProjects - Carpetas Secretas</title>
   <style>
     body {
       margin: 0;
-      background-color: #0f172a;
       font-family: 'Segoe UI', sans-serif;
+      background-color: #0d1b2a;
       color: white;
     }
-    .header {
-      background-color: #1e293b;
+
+    header {
+      background-color: rgba(0, 0, 50, 0.8);
       padding: 20px;
       text-align: center;
       font-size: 28px;
       font-weight: bold;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
     }
-    .header img {
-      height: 60px;
-      border-radius: 12px;
-    }
-    .container {
+
+    main {
       padding: 20px;
-      max-width: 800px;
-      margin: auto;
     }
+
+    input, button, textarea {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 200px;
+    }
+
+    button {
+      background-color: #004488;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0066aa;
+    }
+
     .folder {
-      background-color: #1e3a8a;
-      border-radius: 15px;
-      padding: 10px 15px;
-      margin-bottom: 12px;
+      background-color: rgba(0, 0, 50, 0.5);
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .folder:hover {
+      background-color: rgba(0, 0, 80, 0.7);
+    }
+
+    .comments {
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+
+    .comment {
+      margin: 5px 0;
+      padding: 8px;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .comment-box {
-      background-color: #334155;
-      border-radius: 15px;
-      padding: 15px;
-      margin-bottom: 10px;
+
+    .comment button {
+      background-color: red;
+      padding: 4px 8px;
+      font-size: 14px;
     }
-    button {
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-      margin: 4px;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 8px;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-    }
-    #buscarBtn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 10px;
-      cursor: pointer;
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <button id="buscarBtn">🔍 Buscar carpeta</button>
+  <header>
+    Los Backyardigans estan viendo tu comentario
+  </header>
+  <main>
+    <div>
+      <input type="text" id="folderName" placeholder="Nombre de la carpeta">
+      <input type="password" id="folderPassword" placeholder="Contraseña">
+      <button onclick="createFolder()">➕ Crear Carpeta</button>
+    </div>
+    <div>
+      <input type="text" id="searchInput" placeholder="🔍 Buscar carpeta..." oninput="searchFolders()">
+    </div>
 
-  <div class="header">
-    Los Backyardigans están leyendo tu comentario
-    <img src="https://m.media-amazon.com/images/S/pv-target-images/6b02fea9ac43358cad762d6d089a3684dc62bee64c72c5f99c5a690e99b5bb89._SX1080_FMjpg_.jpg" />
-  </div>
+    <div id="foldersContainer"></div>
 
-  <div class="container">
-    <input id="folderName" placeholder="Nombre de carpeta" />
-    <input id="folderPassword" placeholder="Contraseña" type="password" />
-    <button onclick="crearCarpeta()">Crear carpeta</button>
-
-    <div id="folders"></div>
-    <div id="comments"></div>
-  </div>
+    <div id="folderContent" class="hidden">
+      <h2 id="currentFolderName"> Carpeta</h2>
+      <textarea id="commentInput" rows="2" placeholder=" Escribe..."></textarea>
+      <br>
+      <button onclick="addComment()"> Comentar</button>
+      <button onclick="exitFolder()"> Salir</button>
+      <div id="commentsContainer" class="comments"></div>
+    </div>
+  </main>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyB4BiAjpsTUgntb0F7vcSEGwhJvhLFwxsQ",
-      authDomain: "xprojects-c8ecb.firebaseapp.com",
-      projectId: "xprojects-c8ecb",
-      storageBucket: "xprojects-c8ecb.appspot.com",
-      messagingSenderId: "28051514021",
-      appId: "1:28051514021:web:27af9723e8abebd38ca34c"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    let folders = [];
+    let currentFolder = null;
 
-    async function crearCarpeta() {
+    function createFolder() {
       const name = document.getElementById("folderName").value.trim();
-      const password = document.getElementById("folderPassword").value.trim();
-      if (!name || !password) return alert("Completa ambos campos.");
-      const doc = await db.collection("folders").add({ name, password });
-      loadCarpetas();
+      const pass = document.getElementById("folderPassword").value.trim();
+      if (!name || !pass) return alert("Completa nombre y contraseña");
+      folders.push({ name, pass, comments: [] });
+      document.getElementById("folderName").value = '';
+      document.getElementById("folderPassword").value = '';
+      renderFolders();
     }
 
-    async function eliminarCarpeta(id) {
-      if (!confirm("¿Eliminar esta carpeta?")) return;
-      await db.collection("folders").doc(id).delete();
-      document.getElementById(`comments-${id}`)?.remove();
-      loadCarpetas();
-    }
-
-    function mostrarComentarios(id) {
-      const div = document.getElementById(`comments-${id}`);
-      div.style.display = div.style.display === "none" ? "block" : "none";
-    }
-
-    function enterFolder(id, name) {
-      const password = prompt(`Contraseña para entrar a "${name}":`);
-      db.collection("folders").doc(id).get().then(doc => {
-        if (!doc.exists || doc.data().password !== password) {
-          alert("Contraseña incorrecta.");
-          return;
-        }
-        const div = document.getElementById(`comments-${id}`);
-        div.style.display = "block";
-      });
-    }
-
-    function comentar(id) {
-      const input = document.getElementById(`input-${id}`);
-      const text = input.value.trim();
-      if (!text) return;
-      db.collection("folders").doc(id).collection("comments").add({
-        text,
-        timestamp: new Date()
-      });
-      input.value = "";
-      loadComentarios(id);
-    }
-
-    async function loadComentarios(id) {
-      const snap = await db.collection("folders").doc(id).collection("comments").orderBy("timestamp", "asc").get();
-      const div = document.getElementById(`comments-${id}`);
-      div.innerHTML = `
-        <textarea id="input-${id}" placeholder="Escribe tu comentario..."></textarea>
-        <button onclick="comentar('${id}')">Comentar</button><hr/>
-      `;
-      snap.forEach(doc => {
-        const c = doc.data();
-        div.innerHTML += `<div class="comment-box">${c.text}</div>`;
-      });
-    }
-
-    async function loadCarpetas() {
-      const snap = await db.collection("folders").get();
-      const foldersDiv = document.getElementById("folders");
-      foldersDiv.innerHTML = "";
-      snap.forEach(doc => {
-        const d = doc.data();
+    function renderFolders() {
+      const container = document.getElementById("foldersContainer");
+      container.innerHTML = '';
+      folders.forEach((folder, i) => {
         const div = document.createElement("div");
         div.className = "folder";
-        div.innerHTML = `
-          <strong>${d.name}</strong>
-          <div>
-            <button onclick="enterFolder('${doc.id}', '${d.name}')">Ingresar a la carpeta</button>
-            <button onclick="eliminarCarpeta('${doc.id}')">Eliminar</button>
-          </div>
-        `;
-        foldersDiv.appendChild(div);
-
-        const commentsDiv = document.createElement("div");
-        commentsDiv.id = `comments-${doc.id}`;
-        commentsDiv.style.display = "none";
-        foldersDiv.appendChild(commentsDiv);
-        loadComentarios(doc.id);
+        div.innerText = ` ${folder.name}`;
+        div.onclick = () => enterFolder(i);
+        container.appendChild(div);
       });
     }
 
-    document.getElementById("buscarBtn").addEventListener("click", async () => {
-      const nombre = prompt("¿Cuál es el nombre de la carpeta que deseas buscar?");
-      if (!nombre) return;
-      const folders = await db.collection("folders").where("name", "==", nombre).get();
-      if (folders.empty) {
-        alert("No se encontró ninguna carpeta con ese nombre.");
-        return;
-      }
-      folders.forEach(doc => {
-        const folder = doc.data();
-        enterFolder(doc.id, folder.name);
-        window.scrollTo(0, document.getElementById(`comments-${doc.id}`).offsetTop);
-      });
-    });
+    function enterFolder(index) {
+      const pass = prompt("Ingresa la contraseña de la carpeta:");
+      if (pass !== folders[index].pass) return alert("Contraseña incorrecta");
+      currentFolder = folders[index];
+      document.getElementById("folderContent").classList.remove("hidden");
+      document.getElementById("currentFolderName").innerText = ` ${currentFolder.name}`;
+      showComments();
+    }
 
-    loadCarpetas();
+    function exitFolder() {
+      currentFolder = null;
+      document.getElementById("folderContent").classList.add("hidden");
+    }
+
+    function addComment() {
+      const text = document.getElementById("commentInput").value.trim();
+      if (!text) return;
+      currentFolder.comments.push(text);
+      document.getElementById("commentInput").value = '';
+      showComments();
+    }
+
+    function showComments() {
+      const container = document.getElementById("commentsContainer");
+      container.innerHTML = '';
+      currentFolder.comments.forEach((comment, i) => {
+        const div = document.createElement("div");
+        div.className = "comment";
+        div.innerHTML = ` ${comment} <button onclick="deleteComment(${i})">✖</button>`;
+        container.appendChild(div);
+      });
+    }
+
+    function deleteComment(index) {
+      if (!confirm("¿Eliminar este comentario?")) return;
+      currentFolder.comments.splice(index, 1);
+      showComments();
+    }
+
+    function searchFolders() {
+      const term = document.getElementById("searchInput").value.toLowerCase();
+      const container = document.getElementById("foldersContainer");
+      container.innerHTML = '';
+      folders
+        .filter(f => f.name.toLowerCase().includes(term))
+        .forEach((folder, i) => {
+          const div = document.createElement("div");
+          div.className = "folder";
+          div.innerText = ` ${folder.name}`;
+          div.onclick = () => enterFolder(folders.indexOf(folder));
+          container.appendChild(div);
+        });
+    }
   </script>
 </body>
 </html>
